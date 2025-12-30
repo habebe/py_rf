@@ -4,6 +4,8 @@
 #include "hrf.h"
 #include "py_types.h"
 
+#include "types/py_context.h"
+
 static PyObject *py_hrf_get_device_info(PyObject *self, PyObject *args)
 {
     PyObject *device_infos = PyList_New(0);
@@ -256,6 +258,7 @@ PyMODINIT_FUNC PyInit__core(void)
     if (m == NULL)
         return NULL;
     add_deviceinfo_type(m);
+    py_context_add_type(m);
 
     // Initialize NumPy C-API
     import_array(); // This is a macro that returns NULL on failure

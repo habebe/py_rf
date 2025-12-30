@@ -3,7 +3,92 @@
 #include <string.h>
 #include <stdio.h>
 
+static const uint8_t USB_MAX_SERIAL_LENGTH = (uint8_t)256;
+
 static int hackrf_device_list(HRF *hrf);
+
+static Context *g_context = NULL;
+static int hrf_context_init(Context *context);
+Context *hrf_context_get()
+{
+    if (g_context == NULL)
+    {
+        g_context = (Context *)calloc(1, sizeof(Context));
+        g_context->context = NULL;
+        int status = libusb_init(&g_context->context);
+        if (status == 0)
+        {
+            status = hrf_context_init(g_context);
+        }
+    }
+    return g_context;
+}
+
+static int hrf_context_init(Context *context)
+{
+    int status = 0;
+    int i;
+    uint8_t serial_number_length;
+    char serial_number[USB_MAX_SERIAL_LENGTH + 1];
+    uint8_t serial_descriptor_index;
+    libusb_device_handle *usb_device = NULL;
+
+    context->usb_devices = 0;
+    context->device_descriptors = 0;
+    context->serial_numbers = 0;
+
+    context->device_count = 0;
+    context->device_infos = 0;
+
+    context->usb_device_count = (int)libusb_get_device_list(
+        context->context,
+        &context->usb_devices);
+    if (context->usb_device_count > 0)
+    {
+        context->device_descriptors = calloc(context->usb_device_count, sizeof(struct libusb_device_descriptor));
+        context->serial_numbers = calloc(context->usb_device_count, sizeof(char *));
+        context->device_infos = calloc(context->usb_device_count, sizeof(DeviceInfo));
+
+        for (i = 0; i < context->usb_device_count; i++)
+        {
+            libusb_get_device_descriptor(context->usb_devices[i], &(context->device_descriptors[i]));
+            serial_descriptor_index = context->device_descriptors[i].iSerialNumber;
+            if (serial_descriptor_index > 0)
+            {
+                int open_status = libusb_open(context->usb_devices[i], &usb_device);
+                if (open_status != 0)
+                {
+                    usb_device = NULL;
+                    continue;
+                }
+                serial_number_length = libusb_get_string_descriptor_ascii(
+                    usb_device,
+                    serial_descriptor_index,
+                    (unsigned char *)serial_number,
+                    sizeof(serial_number));
+
+                if (serial_number_length >= USB_MAX_SERIAL_LENGTH)
+                    serial_number_length = USB_MAX_SERIAL_LENGTH;
+
+                serial_number[serial_number_length] = 0;
+                context->serial_numbers[i] = strdup(serial_number);
+                if (hrf_is_device(
+                        context->device_descriptors[i].idVendor,
+                        context->device_descriptors[i].idProduct))
+                {
+                    context->device_infos[context->device_count].index = i;
+                    context->device_infos[context->device_count].board_id = 0;
+                    context->device_infos[context->device_count].vid = context->device_descriptors[i].idVendor;
+                    context->device_infos[context->device_count].pid = context->device_descriptors[i].idProduct;
+                    context->device_count++;
+                }
+                libusb_close(usb_device);
+                usb_device = NULL;
+            }
+        }
+    }
+    return status;
+}
 
 int hrf_init(HRF *hrf)
 {
@@ -239,8 +324,6 @@ static int hrf_detach_kernel_drivers(libusb_device_handle *usb_device_handle)
     return 0;
 }
 #endif
-
-static const uint8_t USB_MAX_SERIAL_LENGTH = (uint8_t)256;
 
 static int
 hackrf_device_list(HRF *hrf)

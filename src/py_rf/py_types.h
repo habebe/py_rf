@@ -9,7 +9,6 @@ typedef struct
 {
     PyObject_HEAD int index;
     int board_id;
-    // PyObject *board_name;
 } PyHRF_DeviceInfo;
 
 int PyHRF_DeviceInfo_init(PyHRF_DeviceInfo *self, PyObject *args, PyObject *kwds);

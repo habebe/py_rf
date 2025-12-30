@@ -44,7 +44,10 @@ ext_modules = [
             "src/py_rf/_core.c",
             "src/py_rf/hrf.c",
             "src/py_rf/hrf_data.c",
-            "src/py_rf/py_types.c"
+            "src/py_rf/py_types.c",
+            
+            "src/py_rf/types/py_device_info.c",
+            "src/py_rf/types/py_context.c",
             ],
         include_dirs=include_dirs,
         library_dirs=library_dirs,

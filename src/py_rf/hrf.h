@@ -7,8 +7,9 @@
 
 int hrf_init(HRF *hrf);
 int hrf_exit(HRF *hrf);
-
 int hrf_is_device(int vid, int pid);
+
+Context *hrf_context_get();
 
 #ifdef HRF_BIG_ENDIAN
 #define TO_LE(x) __builtin_bswap32(x)

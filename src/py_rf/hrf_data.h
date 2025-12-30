@@ -75,6 +75,8 @@ typedef enum HRF_Board_Id
 typedef struct HRF_DeviceInfo
 {
    int index;
+   int vid;
+   int pid;
    HRF_Board_Id board_id;
 } HRF_DeviceInfo;
 
@@ -91,6 +93,28 @@ typedef struct HRF
    int device_count;
    HRF_DeviceInfo *device_info;
 } HRF;
+
+typedef struct DeviceInfo
+{
+   int index;
+   int vid;
+   int pid;
+   HRF_Board_Id board_id;
+} DeviceInfo;
+
+typedef struct Context
+{
+   char *version;
+   libusb_context *context;
+
+   int usb_device_count;
+   struct libusb_device_descriptor *device_descriptors;
+   libusb_device **usb_devices;
+   char **serial_numbers;
+
+   int device_count;
+   DeviceInfo *device_infos;
+} Context;
 
 typedef struct HRF_SerialNumber
 {
